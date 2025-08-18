@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import numpy as np # Importando para simular dados
+import numpy as np 
 
 # ---- CONFIGURAÇÕES INICIAIS DA PÁGINA ----
 st.set_page_config(layout="wide")
@@ -24,18 +24,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ---- SIMULAÇÃO DE TODOS OS DADOS (AGORA NO INÍCIO) ----
-# OBS: Em um cenário real, você substituiria isso por cálculos usando seus dataframes reais.
+
 total_verba_gerenciada = 134500
 total_leads = 17180
-ctr_topo = 3.5 # Simulado em porcentagem
+ctr_topo = 3.5 
 ctr_meio = 1.2
 ctr_fundo = 0.5
 total_impressoes = 520000
 total_alcance = 230000
 total_frequencia = 2.2
 
-# Simulação da quebra por fonte (Meta/Google)
+
 verba_meta = total_verba_gerenciada * 0.6
 verba_google = total_verba_gerenciada * 0.4
 leads_meta = total_leads * 0.7
@@ -48,9 +47,9 @@ alcance_google = total_alcance * 0.4
 # Simulação do funil
 funil_data = pd.DataFrame(dict(
     stage=["Total Leads", "Primeiro Contato", "Reunião", "Proposta", "Contrato"],
-    value=[1000, 700, 500, 300, 100],  # Exemplo de quantidade
-    ciclo_dias=[3, 5, 8, 15, 20],     # Ciclo médio de dias para cada etapa
-    investimento_rs=[2000, 1500, 1000, 500, 100] # Exemplo de investimento
+    value=[1000, 700, 500, 300, 100],  
+    ciclo_dias=[3, 5, 8, 15, 20],
+    investimento_rs=[2000, 1500, 1000, 500, 100] 
 ))
 total_dias_ciclo = funil_data['ciclo_dias'].sum()
 funil_data['percent_dias'] = (funil_data['ciclo_dias'] / total_dias_ciclo) * 100
@@ -62,7 +61,7 @@ funil_data['text_investimento_label'] = funil_data.apply(
     lambda row: f"Investimento: R${row['investimento_rs']:,.0f}", axis=1
 )
 
-# Simulação de dados para os gráficos de linha
+
 df_cpl = pd.DataFrame({
     'date': pd.to_datetime(['2025-01-01', '2025-02-01', '2025-03-01', '2025-04-01', '2025-05-01', '2025-06-01', '2025-07-01', '2025-08-01', '2025-01-01', '2025-02-01', '2025-03-01', '2025-04-01', '2025-05-01', '2025-06-01', '2025-07-01', '2025-08-01', '2025-01-01', '2025-02-01', '2025-03-01', '2025-04-01', '2025-05-01', '2025-06-01', '2025-07-01', '2025-08-01']),
     'lead_source': ['Google Ads'] * 8 + ['Facebook Ads'] * 8 + ['Tráfego Orgânico'] * 8,
@@ -82,7 +81,7 @@ df_satisfaction = pd.DataFrame({
 })
 
 
-# ---- INÍCIO DO LAYOUT DO DATAVIZ (AQUI SEU CÓDIGO COMEÇA) ----
+
 
 st.title("Dashboard de Marketing e Vendas")
 
