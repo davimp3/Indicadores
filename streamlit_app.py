@@ -20,6 +20,15 @@ st.markdown("""
     [data-testid="stVerticalBlock"] > [data-testid="stColumn"] {
         margin-top: -30px;
     }
+
+    /* Reduz o tamanho da fonte das métricas */
+    [data-testid="stMetricLabel"] p {
+        font-size: 16px; /* Tamanho da fonte do rótulo (ex: "Verba Total") */
+    }
+    [data-testid="stMetricValue"] {
+        font-size: 28px; /* Tamanho da fonte do valor (ex: "R$ 134.500,00") */
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -57,8 +66,10 @@ funil_data['text_ciclo_label'] = funil_data.apply(
     lambda row: f"levou {row['ciclo_dias']} dias ({row['percent_dias']:.1f}%)", axis=1
 )
 funil_data['investimento_rs_negativo'] = -funil_data['investimento_rs']
+
+# --- ALTERAÇÃO (Revisada): Cria um rótulo que referencia a etapa e o valor investido ---
 funil_data['text_investimento_label'] = funil_data.apply(
-    lambda row: f"Investimento: R${row['investimento_rs']:,.0f}", axis=1
+    lambda row: f"{row['stage']}: R$ {row['investimento_rs']:,.0f}", axis=1
 )
 
 
@@ -154,6 +165,8 @@ with col_pizza:
         names='Categorias',
         title='Total de Clientes por Segmento de Mercado'
     )
+    # Posiciona a legenda do gráfico de pizza
+    pizza_pie.update_layout(legend=dict(yanchor="middle", y=0.5, xanchor="right", x=0))
     st.plotly_chart(pizza_pie, use_container_width=True)
 
 with col_metrics_geral:
@@ -168,7 +181,7 @@ with col_metrics_geral:
     with metric_leads_total:
         st.metric(
             label="Quantidade de Leads",
-            value=f"{total_leads:,}",
+            value=f"{total_leads:,}".replace(",", "."),
             border=True
         )
         
@@ -184,9 +197,9 @@ with col_metrics_geral:
 
     metric_leads_meta, metric_leads_google = st.columns(2)
     with metric_leads_meta:
-        st.metric(label="Leads Meta", value=f"{leads_meta:,}", delta="70%")
+        st.metric(label="Leads Meta", value=f"{leads_meta:,}".replace(",", "."), delta="70%")
     with metric_leads_google:
-        st.metric(label="Leads Google", value=f"{leads_google:,}", delta="30%")
+        st.metric(label="Leads Google", value=f"{leads_google:,}".replace(",", "."), delta="30%")
 
 
 st.divider()
@@ -240,20 +253,20 @@ with fundofunil:
 st.subheader("Métricas de Mídia")
 col_impressao, col_alcance, col_frequencia = st.columns([33, 33, 33])
 with col_impressao:
-    st.metric(label="Impressões", value=f"{total_impressoes:,}", border=True)
+    st.metric(label="Impressões", value=f"{total_impressoes:,}".replace(",", "."), border=True)
     subcol_imp_meta, subcol_imp_google = st.columns(2)
     with subcol_imp_meta:
-        st.markdown(f"<small>Meta: {impressoes_meta:,}</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Meta: {impressoes_meta:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
     with subcol_imp_google:
-        st.markdown(f"<small>Google: {impressoes_google:,}</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Google: {impressoes_google:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
 
 with col_alcance:
-    st.metric(label="Alcance", value=f"{total_alcance:,}", border=True)
+    st.metric(label="Alcance", value=f"{total_alcance:,}".replace(",", "."), border=True)
     subcol_alc_meta, subcol_alc_google = st.columns(2)
     with subcol_alc_meta:
-        st.markdown(f"<small>Meta: {alcance_meta:,}</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Meta: {alcance_meta:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
     with subcol_alc_google:
-        st.markdown(f"<small>Google: {alcance_google:,}</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Google: {alcance_google:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
 
 with col_frequencia:
     st.metric(label="Frequência", value=f"{total_frequencia:.2f}", border=True)
@@ -278,4 +291,4 @@ fig_satisfaction.update_layout(
     hovermode="x unified",
     template="plotly_dark"
 )
-st.plotly_chart(fig_satisfaction, use_container_width=True)
+st.plotly_chart(fig_satisfaction, use_container_width=True) 
