@@ -57,19 +57,21 @@ alcance_google = total_alcance * 0.4
 funil_data = pd.DataFrame(dict(
     stage=["Total Leads", "Primeiro Contato", "Reunião", "Proposta", "Contrato"],
     value=[1000, 700, 500, 300, 100],  
-    ciclo_dias=[3, 5, 8, 15, 20],
-    investimento_rs=[2000, 1500, 1000, 500, 100] 
+    ciclo_dias=[3, 5, 8, 15, 20]
 ))
 total_dias_ciclo = funil_data['ciclo_dias'].sum()
 funil_data['percent_dias'] = (funil_data['ciclo_dias'] / total_dias_ciclo) * 100
-funil_data['text_ciclo_label'] = funil_data.apply(
-    lambda row: f"levou {row['ciclo_dias']} dias ({row['percent_dias']:.1f}%)", axis=1
-)
-funil_data['investimento_rs_negativo'] = -funil_data['investimento_rs']
 
-# --- ALTERAÇÃO (Revisada): Cria um rótulo que referencia a etapa e o valor investido ---
-funil_data['text_investimento_label'] = funil_data.apply(
-    lambda row: f"{row['stage']}: R$ {row['investimento_rs']:,.0f}", axis=1
+novos_labels_y = ["Custo Lead", "Custo Primeiro Contato", "Custo Reunião", "Custo Proposta", "Custo Contrato"]
+funil_data['stage_labels'] = novos_labels_y
+
+funil_data['text_ciclo_label'] = funil_data.apply(
+    lambda row: f"{row['stage_labels']}: {row['ciclo_dias']} dias ({row['percent_dias']:.1f}%)", axis=1
+)
+
+funil_data['cac_por_etapa'] = total_verba_gerenciada / funil_data['value']
+funil_data['text_cac_label'] = funil_data.apply(
+    lambda row: f"{row['stage_labels']}: R$ {row['cac_por_etapa']:,.2f}", axis=1
 )
 
 
@@ -98,22 +100,31 @@ st.title("Dashboard de Marketing e Vendas")
 
 # --- FUNIL DE VENDAS ---
 st.header("Análise do Funil de Vendas")
-col_ciclo, col_funil, col_investimento = st.columns([1, 2, 1])
+col_ciclo, col_funil, col_cac = st.columns([1.2, 1.6, 1.2])
 
 with col_ciclo:
     st.subheader("Ciclo Médio")
     fig_ciclo = px.bar(
         funil_data,
         x='ciclo_dias',
-        y='stage',
+        y='stage_labels',
         orientation='h',
         title="Tempo de Vendas",
         text='text_ciclo_label',
         template="plotly_dark"
+        # O 'category_orders' foi removido daqui
     )
-    fig_ciclo.update_yaxes(categoryorder='array', categoryarray=funil_data['stage'], visible=False)
-    fig_ciclo.update_traces(textposition='inside')
-    fig_ciclo.update_layout(xaxis_visible=False, yaxis_title=None, showlegend=False)
+    # --- INÍCIO DA ALTERAÇÃO DE ORDEM ---
+    # Inverte a ordem do eixo Y para alinhar com o funil (de cima para baixo)
+    fig_ciclo.update_yaxes(visible=False, autorange="reversed")
+    # --- FIM DA ALTERAÇÃO ---
+    fig_ciclo.update_traces(textposition='inside', textfont_size=12)
+    fig_ciclo.update_layout(
+        xaxis_visible=False, 
+        yaxis_title=None, 
+        showlegend=False,
+        margin=dict(t=40, b=5, l=5, r=5)
+    )
     st.plotly_chart(fig_ciclo, use_container_width=True)
 
 with col_funil:
@@ -126,25 +137,44 @@ with col_funil:
         text='stage',
         template="plotly_dark"
     )
-    fig_funil.update_traces(textposition='inside')
+    fig_funil.update_traces(
+        textposition='inside',
+        hoverinfo='x+y',
+        hovertemplate='<b>%{customdata[0]}</b><br>Valor: %{x}<extra></extra>',
+        customdata=funil_data[['stage_labels']]
+    )
     fig_funil.update_yaxes(categoryorder='array', categoryarray=funil_data['stage'], visible=False)
+    fig_funil.update_layout(
+        margin=dict(t=40, b=5, l=5, r=5)
+    )
     st.plotly_chart(fig_funil, use_container_width=True)
 
-with col_investimento:
-    st.subheader("Investimento")
-    fig_investimento = px.bar(
+with col_cac:
+    st.subheader("CAC (Custo de Aquisição)")
+    fig_cac = px.bar(
         funil_data,
-        x='investimento_rs_negativo',
-        y='stage',
+        x='cac_por_etapa',
+        y='stage_labels',
         orientation='h',
-        title="Valor Investido",
-        text='text_investimento_label',
+        title="CAC por Etapa",
+        text='text_cac_label',
         template="plotly_dark"
+        # O 'category_orders' foi removido daqui
     )
-    fig_investimento.update_yaxes(categoryorder='array', categoryarray=funil_data['stage'], visible=False)
-    fig_investimento.update_traces(textposition='inside')
-    fig_investimento.update_layout(xaxis_visible=False, yaxis_title=None, showlegend=False)
-    st.plotly_chart(fig_investimento, use_container_width=True)
+    # --- INÍCIO DA ALTERAÇÃO DE ORDEM ---
+    # Inverte a ordem do eixo Y para alinhar com o funil (de cima para baixo)
+    fig_cac.update_yaxes(visible=False, autorange="reversed")
+    # --- FIM DA ALTERAÇÃO ---
+    fig_cac.update_traces(textposition='inside', textfont_size=12)
+    fig_cac.update_layout(
+        xaxis_visible=False, 
+        yaxis_title=None, 
+        showlegend=False, 
+        xaxis_autorange='reversed',
+        margin=dict(t=40, b=5, l=5, r=5)
+    )
+    st.plotly_chart(fig_cac, use_container_width=True)
+
 
 st.divider()
 
@@ -165,7 +195,6 @@ with col_pizza:
         names='Categorias',
         title='Total de Clientes por Segmento de Mercado'
     )
-    # Posiciona a legenda do gráfico de pizza
     pizza_pie.update_layout(legend=dict(yanchor="middle", y=0.5, xanchor="right", x=0))
     st.plotly_chart(pizza_pie, use_container_width=True)
 
@@ -175,14 +204,12 @@ with col_metrics_geral:
     with metric_verba_total:
         st.metric(
             label="Verba Total Gerenciada",
-            value=f"R$ {total_verba_gerenciada:,.2f}",
-            border=True
+            value=f"R$ {total_verba_gerenciada:,.2f}"
         )
     with metric_leads_total:
         st.metric(
             label="Quantidade de Leads",
-            value=f"{total_leads:,}".replace(",", "."),
-            border=True
+            value=f"{total_leads:,}".replace(",", ".")
         )
         
     st.markdown("<br>", unsafe_allow_html=True)
@@ -197,9 +224,9 @@ with col_metrics_geral:
 
     metric_leads_meta, metric_leads_google = st.columns(2)
     with metric_leads_meta:
-        st.metric(label="Leads Meta", value=f"{leads_meta:,}".replace(",", "."), delta="70%")
+        st.metric(label="Leads Meta", value=f"{int(leads_meta):,}".replace(",", "."), delta="70%")
     with metric_leads_google:
-        st.metric(label="Leads Google", value=f"{leads_google:,}".replace(",", "."), delta="30%")
+        st.metric(label="Leads Google", value=f"{int(leads_google):,}".replace(",", "."), delta="30%")
 
 
 st.divider()
@@ -243,33 +270,33 @@ st.header("Métricas de Funil e Mídia")
 st.subheader("Taxas de Clique (CTR)")
 topofunil, meiofunil, fundofunil = st.columns([33, 33, 33])
 with topofunil:
-    st.metric(label="Topo Funil", value=f"{ctr_topo:.1f}%", border=True)
+    st.metric(label="Topo Funil", value=f"{ctr_topo:.1f}%")
 with meiofunil:
-    st.metric(label="Meio Funil", value=f"{ctr_meio:.1f}%", border=True)
+    st.metric(label="Meio Funil", value=f"{ctr_meio:.1f}%")
 with fundofunil:
-    st.metric(label="Fundo Funil", value=f"{ctr_fundo:.1f}%", border=True)
+    st.metric(label="Fundo Funil", value=f"{ctr_fundo:.1f}%")
 
 
 st.subheader("Métricas de Mídia")
 col_impressao, col_alcance, col_frequencia = st.columns([33, 33, 33])
 with col_impressao:
-    st.metric(label="Impressões", value=f"{total_impressoes:,}".replace(",", "."), border=True)
+    st.metric(label="Impressões", value=f"{total_impressoes:,}".replace(",", "."))
     subcol_imp_meta, subcol_imp_google = st.columns(2)
     with subcol_imp_meta:
-        st.markdown(f"<small>Meta: {impressoes_meta:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Meta: {int(impressoes_meta):,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
     with subcol_imp_google:
-        st.markdown(f"<small>Google: {impressoes_google:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Google: {int(impressoes_google):,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
 
 with col_alcance:
-    st.metric(label="Alcance", value=f"{total_alcance:,}".replace(",", "."), border=True)
+    st.metric(label="Alcance", value=f"{total_alcance:,}".replace(",", "."))
     subcol_alc_meta, subcol_alc_google = st.columns(2)
     with subcol_alc_meta:
-        st.markdown(f"<small>Meta: {alcance_meta:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Meta: {int(alcance_meta):,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
     with subcol_alc_google:
-        st.markdown(f"<small>Google: {alcance_google:,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
+        st.markdown(f"<small>Google: {int(alcance_google):,}".replace(",", ".") + "</small>", unsafe_allow_html=True)
 
 with col_frequencia:
-    st.metric(label="Frequência", value=f"{total_frequencia:.2f}", border=True)
+    st.metric(label="Frequência", value=f"{total_frequencia:.2f}")
 
 
 st.divider()
@@ -291,4 +318,4 @@ fig_satisfaction.update_layout(
     hovermode="x unified",
     template="plotly_dark"
 )
-st.plotly_chart(fig_satisfaction, use_container_width=True) 
+st.plotly_chart(fig_satisfaction, use_container_width=True)
