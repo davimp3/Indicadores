@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import numpy as np 
+import numpy as np
+import datetime
 
 # ---- CONFIGURAÇÕES INICIAIS DA PÁGINA ----
 st.set_page_config(layout="wide")
@@ -62,7 +63,7 @@ funil_data = pd.DataFrame(dict(
 total_dias_ciclo = funil_data['ciclo_dias'].sum()
 funil_data['percent_dias'] = (funil_data['ciclo_dias'] / total_dias_ciclo) * 100
 
-novos_labels_y = ["Custo Lead", "Custo Primeiro Contato", "Custo Reunião", "Custo Proposta", "Custo Contrato"]
+novos_labels_y = ["Custo Total Lead", "Custo Total Primeiro Contato", "Custo Total Reunião", "Custo Total Proposta", "Custo Total Contrato"]
 funil_data['stage_labels'] = novos_labels_y
 
 funil_data['text_ciclo_label'] = funil_data.apply(
@@ -94,7 +95,48 @@ df_satisfaction = pd.DataFrame({
 })
 
 
+st.sidebar.title("Filtros")
 
+st.sidebar.divider()
+
+st.sidebar.subheader("Filtros de Data")
+
+today = datetime.datetime.now()
+next_year = today.year + 1
+jan_1 = datetime.date(next_year, 1, 1)
+dec_31 = datetime.date(next_year, 12, 31)
+
+d = st.sidebar.date_input(
+    "Seleção do Período",
+    (jan_1, datetime.date(next_year, 1, 7)),
+    jan_1,
+    dec_31,
+    format="MM.DD.YYYY",
+)
+
+start_time = st.sidebar.slider(
+    label="Data Range",
+)
+
+st.sidebar.divider()
+
+st.sidebar.subheader("Clientes")
+
+options = st.sidebar.multiselect(
+    "Cliente(s)",
+    ["Green", "Yellow", "Red", "Blue", "All"],
+    default=["All"],
+)
+
+st.sidebar.divider()
+
+st.sidebar.subheader("Categorias")
+
+options2 = st.sidebar.multiselect(
+    "Categoria(s)",
+    ["Green", "Yellow", "Red", "Blue", "All"],
+    default=["All"],
+)
 
 st.title("Dashboard de Marketing e Vendas")
 
